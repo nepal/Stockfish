@@ -32,6 +32,8 @@
 /// -DNO_PREFETCH | Disable use of prefetch asm-instruction. You may need this to
 ///               | run on some very old machines.
 ///
+/// -DUSE_SSE2    | Add runtime support for Intel SSE2 instruction set.
+///
 /// -DUSE_POPCNT  | Add runtime support for use of popcnt asm-instruction. Works
 ///               | only in 64-bit mode and requires hardware with popcnt support.
 ///
@@ -72,11 +74,35 @@
 #  include <xmmintrin.h> // Intel and Microsoft header for _mm_prefetch()
 #endif
 
+
+// unaligned move of 256 bits
+#if defined(USE_SSE2)
+#  include <emmintrin.h>
+#define memmove256u(to, from) \
+    do { \
+        const __m128i* f = (const __m128i*)(from); \
+        __m128i* t = (__m128i*)(to); \
+        __m128i first  = _mm_loadu_si128(f); \
+        __m128i second = _mm_loadu_si128(f + 1); \
+        _mm_storeu_si128(t, first); \
+        _mm_storeu_si128(t + 1, second); \
+    } while (0)
+#else
+#define memmove256u(to, from)
+#endif
+
 #if defined(USE_PEXT)
 #  include <immintrin.h> // Header for _pext_u64() intrinsic
 #  define pext(b, m) _pext_u64(b, m)
 #else
 #  define pext(b, m) (0)
+#endif
+
+
+#ifdef USE_SSE2
+const bool HasSSE2 = true;
+#else
+const bool HasSSE2 = false;
 #endif
 
 #ifdef USE_POPCNT
