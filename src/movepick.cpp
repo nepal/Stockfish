@@ -48,12 +48,27 @@ namespace {
     }
   }
 
+  // ptr_max_element is a version of std::max_element for pointers instead of ForwardIterators.
+  // Unlike ForwardIterators, pointers can be compared using '<' and incremented past the end of sequence.
+  // This allows us to get rid of extra check for empty input
+  template<typename T>
+  inline T* ptr_max_element(T* begin, T* end)
+  {
+    T* largest = begin;
+    while (++begin < end)
+    {
+        if (*largest < *begin)
+            largest = begin;
+    }
+    return largest;
+  }
+
   // pick_best() finds the best move in the range (begin, end) and moves it to
   // the front. It's faster than sorting all the moves in advance when there
   // are few moves, e.g., the possible captures.
   Move pick_best(ExtMove* begin, ExtMove* end)
   {
-      std::swap(*begin, *std::max_element(begin, end));
+      std::swap(*begin, *ptr_max_element(begin, end));
       return *begin;
   }
 
