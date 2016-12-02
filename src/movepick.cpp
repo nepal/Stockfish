@@ -19,6 +19,7 @@
 */
 
 #include <cassert>
+#include <cstddef>
 
 #include "movepick.h"
 #include "thread.h"
@@ -42,8 +43,17 @@ namespace {
     for (p = begin + 1; p < end; ++p)
     {
         tmp = *p;
-        for (q = p; q != begin && *(q-1) < tmp; --q)
-            *q = *(q-1);
+        q = p;
+        // move 16 bytes (128 bits) on each step using SSE2
+        if (16 % sizeof(ExtMove) == 0 && HasSSE2)
+        {
+            const std::size_t stride = 16 / sizeof(ExtMove);
+            for (; q >= begin + stride && *(q - stride) < tmp; q -= stride)
+                memmove128u(q - stride + 1, q - stride);
+        }
+        // move (remaining) elements one by one
+        for (; q != begin && *(q - 1) < tmp; --q)
+            *q = *(q - 1);
         *q = tmp;
     }
   }

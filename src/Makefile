@@ -57,6 +57,7 @@ OBJS = benchmark.o bitbase.o bitboard.o endgame.o evaluate.o main.o \
 # prefetch = yes/no   --- -DUSE_PREFETCH   --- Use prefetch asm-instruction
 # popcnt = yes/no     --- -DUSE_POPCNT     --- Use popcnt asm-instruction
 # sse = yes/no        --- -msse            --- Use Intel Streaming SIMD Extensions
+# sse2 = yes/no       --- -DUSE_SSE2       --- Use Intel Streaming SIMD Extensions 2
 # pext = yes/no       --- -DUSE_PEXT       --- Use pext x86_64 asm-instruction
 #
 # Note that Makefile is space sensitive, so when adding new architectures
@@ -71,6 +72,7 @@ bits = 32
 prefetch = no
 popcnt = no
 sse = no
+sse2 = no
 pext = no
 
 ### 2.2 Architecture specific
@@ -99,6 +101,7 @@ ifeq ($(ARCH),x86-64)
 	bits = 64
 	prefetch = yes
 	sse = yes
+	sse2 = yes
 endif
 
 ifeq ($(ARCH),x86-64-modern)
@@ -107,6 +110,7 @@ ifeq ($(ARCH),x86-64-modern)
 	prefetch = yes
 	popcnt = yes
 	sse = yes
+	sse2 = yes
 endif
 
 ifeq ($(ARCH),x86-64-bmi2)
@@ -115,6 +119,7 @@ ifeq ($(ARCH),x86-64-bmi2)
 	prefetch = yes
 	popcnt = yes
 	sse = yes
+	sse2 = yes
 	pext = yes
 endif
 
@@ -320,7 +325,12 @@ else
 	CXXFLAGS += -DNO_PREFETCH
 endif
 
-### 3.6 popcnt
+### 3.6 sse2
+ifeq ($(sse2),yes)
+	CXXFLAGS += -msse2 -DUSE_SSE2
+endif
+
+### 3.7 popcnt
 ifeq ($(popcnt),yes)
 	ifeq ($(comp),icc)
 		CXXFLAGS += -msse3 -DUSE_POPCNT
@@ -329,7 +339,7 @@ ifeq ($(popcnt),yes)
 	endif
 endif
 
-### 3.7 pext
+### 3.8 pext
 ifeq ($(pext),yes)
 	CXXFLAGS += -DUSE_PEXT
 	ifeq ($(comp),$(filter $(comp),gcc clang mingw))
@@ -337,7 +347,7 @@ ifeq ($(pext),yes)
 	endif
 endif
 
-### 3.8 Link Time Optimization, it works since gcc 4.5 but not on mingw under Windows.
+### 3.9 Link Time Optimization, it works since gcc 4.5 but not on mingw under Windows.
 ### This is a mix of compile and link time options because the lto link phase
 ### needs access to the optimization flags.
 ifeq ($(comp),gcc)
@@ -360,7 +370,7 @@ ifeq ($(comp),mingw)
 	endif
 endif
 
-### 3.9 Android 5 can only run position independent executables. Note that this
+### 3.10 Android 5 can only run position independent executables. Note that this
 ### breaks Android 4.0 and earlier.
 ifeq ($(OS), Android)
 	CXXFLAGS += -fPIE
